@@ -17,11 +17,12 @@ import (
 	fusefs "bazil.org/fuse/fs"
 	_ "github.com/anacrolix/envpprof"
 	"github.com/anacrolix/tagflag"
-
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/fs"
 	"github.com/anacrolix/torrent/util/dirwatch"
 )
+
+const AppVersion = "torrentfs 1.0"
 
 var (
 	args = struct {
@@ -33,6 +34,7 @@ var (
 		TestPeer        *net.TCPAddr
 		ReadaheadBytes  tagflag.Bytes
 		ListenAddr      *net.TCPAddr
+		Version         bool
 	}{
 		MetainfoDir: func() string {
 			_user, err := user.Current()
@@ -43,6 +45,7 @@ var (
 		}(),
 		ReadaheadBytes: 10 << 20,
 		ListenAddr:     &net.TCPAddr{},
+		Version:        false,
 	}
 )
 
@@ -74,8 +77,13 @@ func main() {
 
 func mainExitCode() int {
 	tagflag.Parse(&args)
+	if args.Version {
+		os.Stdout.WriteString(AppVersion)
+		os.Stdout.WriteString("\n")
+		return 0
+	}
 	if args.MountDir == "" {
-		os.Stderr.WriteString("y u no specify mountpoint?\n")
+		os.Stderr.WriteString("you no specify mountpoint?\n")
 		return 2
 	}
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
