@@ -29,23 +29,21 @@ var (
 	args = struct {
 		WatchDirs string `help:"torrent files locations separated by semicolon"`
 
-		BannedFile     string        `help:"banned ip list"`
-		UploadRate     tagflag.Bytes `help:"max piece bytes to send per second"`
-		DownloadRate   tagflag.Bytes `help:"max bytes per second down from peers"`
-		ReadaheadBytes tagflag.Bytes
-		ListenAddr     *net.TCPAddr
-		ListenStat     *net.TCPAddr
-		AliveMinutes   tagflag.Bytes
-		Version        bool
+		BannedFile   string        `help:"banned ip list"`
+		UploadRate   tagflag.Bytes `help:"max piece bytes to send per second"`
+		DownloadRate tagflag.Bytes `help:"max bytes per second down from peers"`
+		ListenAddr   *net.TCPAddr
+		ListenStat   *net.TCPAddr
+		AliveMinutes int
+		Version      bool
 	}{
-		ReadaheadBytes: 10 << 20,
-		ListenAddr:     &net.TCPAddr{},
-		ListenStat:     &net.TCPAddr{Port: 8800},
-		Version:        false,
-		BannedFile:     "block.ip.list",
-		UploadRate:     -1,
-		DownloadRate:   -1,
-		AliveMinutes:   240,
+		ListenAddr:   &net.TCPAddr{Port: 16881},
+		ListenStat:   &net.TCPAddr{Port: 8800},
+		Version:      false,
+		BannedFile:   "block.ip.list",
+		AliveMinutes: 240,
+		DownloadRate: -1,
+		UploadRate:   1024 * 1024 / 8,
 	}
 )
 
