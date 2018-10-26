@@ -118,7 +118,9 @@ func mainExitCode() int {
 	onShutdown(func() {
 		log.Printf("close signal received at %s\n", time.Now().Format(time.RFC3339))
 		client.Close()
+		log.Println("client closed")
 		logger.Close()
+		log.Println("logger closed")
 		os.Exit(1)
 	})
 
