@@ -182,9 +182,7 @@ func mainExitCode() int {
 											tt.DownloadAll()
 											for {
 												<-tt.GotInfo()
-												if tt.Seeding() {
-													log.Printf("seeding %s", fn)
-												} else if tt.BytesCompleted() == tt.Info().TotalLength() {
+												if tt.BytesCompleted() == tt.Info().TotalLength() {
 													break
 												} else {
 													log.Printf("downloading (%s/%s) %s", humanize.Bytes(uint64(tt.BytesCompleted())), humanize.Bytes(uint64(tt.Info().TotalLength())), fn)
