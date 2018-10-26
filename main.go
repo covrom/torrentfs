@@ -142,10 +142,11 @@ func mainExitCode() int {
 		storageImpl := store.NewFile(dir)
 		defer storageImpl.Close()
 
-		dw, err := dirwatch.New(wtchr)
+		dw, err := dirwatch.New(dir)
 		if err != nil {
 			log.Printf("error watching torrent dir: %s\n", err)
 		} else {
+			log.Printf("watching torrent dir: %s\n", dir)
 
 			go func(sti storage.ClientImpl) {
 				for ev := range dw.Events {
