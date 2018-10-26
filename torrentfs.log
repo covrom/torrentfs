@@ -1,3 +1,0 @@
-2018/10/26 10:31:42 main.go:88: torrentfs 1.0 started at 2018-10-26T10:31:42+03:00
-2018/10/26 10:31:43 file.go:28: couldn't open piece completion db in ".": timeout
-2018/10/26 10:31:52 main.go:56: close signal received at 2018-10-26T10:31:42+03:00: interrupt

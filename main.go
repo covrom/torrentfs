@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/anacrolix/torrent/storage"
 	"github.com/anacrolix/torrent/util/dirwatch"
 	"github.com/covrom/torrentfs/store"
+	humanize "github.com/dustin/go-humanize"
 	"golang.org/x/time/rate"
 )
 
@@ -49,15 +51,14 @@ var (
 	}
 )
 
-func exitSignalHandlers(client *torrent.Client, logger io.Closer) {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-	for {
-		log.Printf("close signal received at %s: %+v\n", time.Now().Format(time.RFC3339), <-c)
-		client.Close()
-		logger.Close()
-		os.Exit(0)
-	}
+func onShutdown(f func()) {
+	once := &sync.Once{}
+	sigc := make(chan os.Signal, 3)
+	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGTERM)
+	go func() {
+		<-sigc
+		once.Do(f)
+	}()
 }
 
 func main() {
@@ -113,7 +114,12 @@ func mainExitCode() int {
 		return 1
 	}
 	defer client.Close()
-	go exitSignalHandlers(client, logger)
+
+	onShutdown(func() {
+		log.Printf("close signal received at %s\n", time.Now().Format(time.RFC3339))
+		client.Close()
+		logger.Close()
+	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		client.WriteStatus(w)
@@ -171,6 +177,18 @@ func mainExitCode() int {
 										go func(tt *torrent.Torrent, fn string) {
 											<-tt.GotInfo()
 											tt.DownloadAll()
+											for {
+												<-tt.GotInfo()
+												if tt.Seeding() {
+													log.Printf("seeding %s", fn)
+												} else if tt.BytesCompleted() == tt.Info().TotalLength() {
+													break
+												} else {
+													log.Printf("downloading (%s/%s) %s", humanize.Bytes(uint64(tt.BytesCompleted())), humanize.Bytes(uint64(tt.Info().TotalLength())), fn)
+												}
+												time.Sleep(time.Second)
+											}
+
 											log.Printf("torrent is complete %s", fn)
 											<-time.After(time.Duration(int64(args.AliveMinutes) * int64(time.Minute)))
 											tt.Drop()
