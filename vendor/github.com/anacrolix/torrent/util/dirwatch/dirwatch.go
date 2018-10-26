@@ -49,7 +49,7 @@ func (i *Instance) Close() {
 func (i *Instance) handleEvents() {
 	defer close(i.Events)
 	for e := range i.w.Events {
-		log.Printf("event: %s", e)
+		// log.Printf("event: %s", e)
 		if e.Op == fsnotify.Write {
 			// TODO: Special treatment as an existing torrent may have changed.
 		} else {

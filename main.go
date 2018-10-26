@@ -187,7 +187,7 @@ func mainExitCode() int {
 												} else {
 													log.Printf("downloading (%s/%s) %s", humanize.Bytes(uint64(tt.BytesCompleted())), humanize.Bytes(uint64(tt.Info().TotalLength())), fn)
 												}
-												time.Sleep(time.Second)
+												time.Sleep(5 * time.Second)
 											}
 
 											log.Printf("torrent is complete %s", fn)
