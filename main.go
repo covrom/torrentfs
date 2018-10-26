@@ -119,6 +119,7 @@ func mainExitCode() int {
 		log.Printf("close signal received at %s\n", time.Now().Format(time.RFC3339))
 		client.Close()
 		logger.Close()
+		os.Exit(1)
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
