@@ -28,8 +28,14 @@ type boltPieceCompletion struct {
 var _ PieceCompletion = (*boltPieceCompletion)(nil)
 
 func NewBoltPieceCompletion(dir string) (ret PieceCompletion, err error) {
-	os.MkdirAll(dir, 0770)
-	p := filepath.Join(dir, ".torrent.bolt.db")
+	var pwd string
+	pwd, err = os.Getwd()
+	if err != nil {
+		return
+	}
+	ddir := filepath.Join(pwd, dir)
+	os.MkdirAll(ddir, 0770)
+	p := filepath.Join(ddir, ".torrent.bolt.db")
 	db, err := bolt.Open(p, 0660, &bolt.Options{
 		Timeout: time.Second,
 	})
