@@ -227,6 +227,7 @@ func mainExitCode() int {
 	for i := 0; i < args.ActiveTorrents; i++ {
 		go func() {
 			defer wg.Done()
+			// down all -> mon down -> pause and drop
 			for {
 				select {
 				case <-done:
