@@ -28,7 +28,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-const AppVersion = "torrentfs 1.1"
+const AppVersion = "torrentfs 1.2"
 
 var (
 	args = struct {
@@ -295,67 +295,28 @@ func mainExitCode() int {
 	for i := 0; i < args.ActiveTorrents; i++ {
 		go func() {
 			defer wg.Done()
-			// down all -> mon down -> pause and drop
+			// down all -> mon down (timer) -> next torrent -> pause and drop
 			for {
 				select {
 				case <-done:
 					return
 				case tt := <-chq:
-					fn := tt.Name()
 					<-tt.GotInfo()
 					tt.DownloadAll()
-					const SLEEP_INTERVAL = 5 * time.Second
-					tck := time.NewTicker(SLEEP_INTERVAL)
-					ttcl := tt.Closed()
-					lastbc := int64(0)
-				loop:
-					for {
-						select {
-						case <-ttcl:
-							log.Printf("closed %s\n", fn)
-							tck.Stop()
-							return
-						case <-tt.GotInfo():
-							if tt.BytesCompleted() == tt.Info().TotalLength() {
-								tck.Stop()
-								break loop
-							}
-							cbc := tt.BytesCompleted()
-							delta := (cbc - lastbc) / int64(SLEEP_INTERVAL/time.Second)
-							lastbc = cbc
-							log.Printf("downloading (%s/%s, speed %s/s) %s",
-								humanize.Bytes(uint64(tt.BytesCompleted())),
-								humanize.Bytes(uint64(tt.Info().TotalLength())),
-								humanize.Bytes(uint64(delta)),
-								fn,
-							)
 
-							select {
-							case <-tck.C:
-							case <-done:
-								tck.Stop()
-								tt.Drop()
-								log.Printf("drop %s\n", fn)
-								return
-							}
-						case <-done:
-							tck.Stop()
-							tt.Drop()
-							log.Printf("drop %s\n", fn)
-							return
+					chnext := make(chan bool)
+					fcloser := func(chn chan bool, once *sync.Once) func() {
+						return func() {
+							once.Do(func() {
+								close(chn)
+							})
 						}
-					}
-					log.Printf("torrent is complete %s", fn)
+					}(chnext, &sync.Once{})
+
 					wg.Add(1)
-					go func(ttt *torrent.Torrent, fnn string) {
-						defer wg.Done()
-						select {
-						case <-done:
-						case <-time.After(time.Duration(int64(args.AliveMinutes) * int64(time.Minute))):
-						}
-						ttt.Drop()
-						log.Printf("drop %s\n", fnn)
-					}(tt, fn)
+					go downt(tt, fcloser, wg, done)
+
+					<-chnext
 				}
 			}
 		}()
@@ -389,41 +350,7 @@ func mainExitCode() int {
 								continue
 							}
 							wg.Add(1)
-							go func(evfn string) {
-								defer wg.Done()
-								<-time.After(2 * time.Second)
-								log.Printf("adding %s", evfn)
-								if len(evfn) > 0 {
-									mi, err := metainfo.LoadFromFile(evfn)
-									if err != nil {
-										log.Printf("error adding torrent %s to client: %s\n", evfn, err)
-									} else {
-										spec := torrent.TorrentSpecFromMetaInfo(mi)
-
-										spec.Storage = sti
-
-										t, _, err := client.AddTorrentSpec(spec)
-										var ss []string
-										slices.MakeInto(&ss, mi.Nodes)
-										client.AddDHTNodes(ss)
-
-										if err != nil {
-											log.Printf("error adding torrent %s to client: %s\n", evfn, err)
-										} else {
-											wg.Add(1)
-											go func(tt *torrent.Torrent, fn string) {
-												defer wg.Done()
-												select {
-												case chq <- tt:
-													log.Printf("delete file %s", fn)
-													os.Remove(fn)
-												case <-done:
-												}
-											}(t, evfn)
-										}
-									}
-								}
-							}(ev.TorrentFilePath)
+							go addt(client, chq, sti, ev.TorrentFilePath, wg, done)
 						}
 					}
 				}
@@ -433,4 +360,86 @@ func mainExitCode() int {
 
 	http.ListenAndServe(args.ListenStat.String(), nil)
 	return 1
+}
+
+func downt(tt *torrent.Torrent, acceptNext func(), wg *sync.WaitGroup, done chan bool) {
+	defer wg.Done()
+	defer acceptNext()
+	fn := tt.Name()
+	ttcl := tt.Closed()
+	lastbc := int64(0)
+	const SLEEP_INTERVAL = 5 * time.Second
+	tck := time.NewTicker(SLEEP_INTERVAL)
+	for {
+		select {
+		case <-done:
+			tck.Stop()
+			tt.Drop()
+			log.Printf("drop %s\n", fn)
+			return
+		case <-ttcl:
+			log.Printf("closed %s\n", fn)
+			tck.Stop()
+			return
+		case <-tck.C:
+			<-tt.GotInfo()
+			if tt.BytesCompleted() == tt.Info().TotalLength() {
+				tck.Stop()
+				acceptNext()
+				log.Printf("torrent is complete %s", fn)
+				select {
+				case <-done:
+				case <-time.After(time.Duration(int64(args.AliveMinutes) * int64(time.Minute))):
+				}
+				tt.Drop()
+				log.Printf("drop %s\n", fn)
+				return
+			}
+			cbc := tt.BytesCompleted()
+			delta := (cbc - lastbc) / int64(SLEEP_INTERVAL/time.Second)
+			lastbc = cbc
+			log.Printf("downloading (%s/%s, speed %s/s) %s",
+				humanize.Bytes(uint64(tt.BytesCompleted())),
+				humanize.Bytes(uint64(tt.Info().TotalLength())),
+				humanize.Bytes(uint64(delta)),
+				fn,
+			)
+		}
+	}
+}
+
+func addt(client *torrent.Client, chq chan *torrent.Torrent, sti storage.ClientImpl, evfn string, wg *sync.WaitGroup, done chan bool) {
+	defer wg.Done()
+	<-time.After(2 * time.Second)
+	log.Printf("adding %s", evfn)
+	if len(evfn) > 0 {
+		mi, err := metainfo.LoadFromFile(evfn)
+		if err != nil {
+			log.Printf("error adding torrent %s to client: %s\n", evfn, err)
+		} else {
+			spec := torrent.TorrentSpecFromMetaInfo(mi)
+
+			spec.Storage = sti
+
+			t, _, err := client.AddTorrentSpec(spec)
+			var ss []string
+			slices.MakeInto(&ss, mi.Nodes)
+			client.AddDHTNodes(ss)
+
+			if err != nil {
+				log.Printf("error adding torrent %s to client: %s\n", evfn, err)
+			} else {
+				wg.Add(1)
+				go func(tt *torrent.Torrent, fn string) {
+					defer wg.Done()
+					select {
+					case chq <- tt:
+						log.Printf("delete file %s", fn)
+						os.Remove(fn)
+					case <-done:
+					}
+				}(t, evfn)
+			}
+		}
+	}
 }
