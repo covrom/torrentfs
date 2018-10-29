@@ -134,13 +134,81 @@ func mainExitCode() int {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title>torrentfs</title>
+	<style type="text/css">
+        html {
+            font-size: 62.5%;
+            line-height: 1.15;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            margin: 20px;
+            font-size: 1.3em;
+            line-height: 1.6;
+            font-weight: 400;
+            font-family: "Noto Sans", "Roboto", "HelveticaNeue", "Helvetica Neue", Helvetica, "MS Sans Serif", Arial, sans-serif;
+            color: #4b4b4b;
+        }
+
+        a {
+            background-color: transparent;
+            text-decoration: none;
+            color: #1c55ae;
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        button,
+        input,
+        optgroup,
+        select,
+        textarea {
+            font-family: inherit;
+            font-size: 100%;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 5px;
+        }
+
+        .lines table,
+        .lines th,
+        .lines td {
+            border: 1px solid lightgray;
+        }
+    </style>
 </head>
 
 <body>
-	<a href="/stat">Full status</a> <a href="/log">Current log</a> <br/>
-	{{range .}}
-	<pre>{{.Name}} {{.Completed}}/{{.Total}} Seed:{{.Seeds}} <a href="/del?hash={{.Hash}}">Delete</a> </pre>
-	{{end}}
+	<p><a href="/stat">Full status</a></p>
+	<p><a href="/log">Current log</a></p>
+	<table class="lines">
+		<thead>
+			<th>Name</th>
+			<th>Completed</th>
+			<th>Total</th>
+			<th>Seeders</th>
+			<th>Delete</th>
+		</thead>
+		<tbody>
+			{{range .}}
+			<tr>
+				<td>{{.Name}}</td>
+				<td>{{.Completed}}</td>
+				<td>{{.Total}}</td>
+				<td>{{.Seeds}}</td>
+				<td><a href="/del?hash={{.Hash}}">Delete</a></td>
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
 </body>
 
 </html>
