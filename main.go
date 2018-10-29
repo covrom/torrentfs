@@ -235,8 +235,10 @@ func mainExitCode() int {
 					fn := tt.Name()
 					<-tt.GotInfo()
 					tt.DownloadAll()
-					tck := time.NewTicker(5 * time.Second)
+					const SLEEP_INTERVAL = 5 * time.Second
+					tck := time.NewTicker(SLEEP_INTERVAL)
 					ttcl := tt.Closed()
+					lastbc := int64(0)
 				loop:
 					for {
 						select {
@@ -248,9 +250,15 @@ func mainExitCode() int {
 							if tt.BytesCompleted() == tt.Info().TotalLength() {
 								tck.Stop()
 								break loop
-							} else {
-								log.Printf("downloading (%s/%s) %s", humanize.Bytes(uint64(tt.BytesCompleted())), humanize.Bytes(uint64(tt.Info().TotalLength())), fn)
 							}
+							delta := (tt.BytesCompleted() - lastbc) / int64(SLEEP_INTERVAL/time.Second)
+							log.Printf("downloading (%s/%s %s/s) %s",
+								humanize.Bytes(uint64(tt.BytesCompleted())),
+								humanize.Bytes(uint64(tt.Info().TotalLength())),
+								humanize.Bytes(uint64(delta)),
+								fn,
+							)
+
 							select {
 							case <-tck.C:
 							case <-done:
@@ -267,15 +275,16 @@ func mainExitCode() int {
 						}
 					}
 					log.Printf("torrent is complete %s", fn)
-					select {
-					case <-done:
-						tt.Drop()
-						log.Printf("drop %s\n", fn)
-						return
-					case <-time.After(time.Duration(int64(args.AliveMinutes) * int64(time.Minute))):
-					}
-					tt.Drop()
-					log.Printf("drop %s\n", fn)
+					wg.Add(1)
+					go func(ttt *torrent.Torrent, fnn string) {
+						defer wg.Done()
+						select {
+						case <-done:
+						case <-time.After(time.Duration(int64(args.AliveMinutes) * int64(time.Minute))):
+						}
+						ttt.Drop()
+						log.Printf("drop %s\n", fnn)
+					}(tt, fn)
 				}
 			}
 		}()
