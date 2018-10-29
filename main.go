@@ -252,8 +252,10 @@ func mainExitCode() int {
 								tck.Stop()
 								break loop
 							}
-							delta := (tt.BytesCompleted() - lastbc) / int64(SLEEP_INTERVAL/time.Second)
-							log.Printf("downloading (%s/%s %s/s) %s",
+							cbc := tt.BytesCompleted()
+							delta := (cbc - lastbc) / int64(SLEEP_INTERVAL/time.Second)
+							lastbc = cbc
+							log.Printf("downloading (%s/%s, speed %s/s) %s",
 								humanize.Bytes(uint64(tt.BytesCompleted())),
 								humanize.Bytes(uint64(tt.Info().TotalLength())),
 								humanize.Bytes(uint64(delta)),
