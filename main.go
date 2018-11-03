@@ -70,9 +70,9 @@ func main() {
 }
 
 func mainExitCode() int {
-	profiler := profile.Start(profile.TraceProfile, profile.ProfilePath("."), profile.NoShutdownHook)
+	// profiler := profile.Start(profile.TraceProfile, profile.ProfilePath("."), profile.NoShutdownHook)
 	// profiler := profile.Start(profile.CPUProfile, profile.ProfilePath("."), profile.NoShutdownHook)
-	// profiler := profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook)
+	profiler := profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook)
 
 	tagflag.Parse(&args)
 	if args.Version {
