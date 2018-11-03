@@ -76,8 +76,8 @@ ExecStart=/opt/torrentfs/torrentfs
 WantedBy=multi-user.target
 " > ./deb/etc/systemd/system/torrentfs.service
 
-chmod 0750 ./deb/opt/torrentfs/torrentfs
-chmod 0640 ./deb/etc/systemd/system/torrentfs.service
+chmod 0755 ./deb/opt/torrentfs/torrentfs
+chmod 0644 ./deb/etc/systemd/system/torrentfs.service
 
 fakeroot dpkg-deb --build ./deb
 
