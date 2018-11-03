@@ -25,6 +25,7 @@ import (
 	"github.com/anacrolix/torrent/util/dirwatch"
 	"github.com/covrom/torrentfs/store"
 	humanize "github.com/dustin/go-humanize"
+	"github.com/pkg/profile"
 	"golang.org/x/time/rate"
 )
 
@@ -69,6 +70,10 @@ func main() {
 }
 
 func mainExitCode() int {
+	profiler := profile.Start(profile.TraceProfile, profile.ProfilePath("."), profile.NoShutdownHook)
+	// profiler := profile.Start(profile.CPUProfile, profile.ProfilePath("."), profile.NoShutdownHook)
+	// profiler := profile.Start(profile.MemProfile, profile.ProfilePath("."), profile.NoShutdownHook)
+
 	tagflag.Parse(&args)
 	if args.Version {
 		os.Stdout.WriteString(AppVersion)
@@ -278,6 +283,8 @@ func mainExitCode() int {
 	wg := &sync.WaitGroup{}
 
 	onShutdown(func() {
+		profiler.Stop()
+
 		close(done)
 		wg.Wait()
 

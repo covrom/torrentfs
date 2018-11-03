@@ -14,3 +14,4 @@ torrentfs
 home/nmlh/Загрузки/.torrent.bolt.db
 torrentfs.log
 
+mem.pprof
