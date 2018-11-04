@@ -1,8 +1,8 @@
 #!/bin/bash
 
-go build -ldflags="-s -w" .
-fullver=`./torrentfs -version`
-ver=`./torrentfs -version|grep -Po '(?<=torrentfs )\d.\d'`
+go build -ldflags="-s -w" -o "./torrentnotify" .
+fullver=`./torrentnotify -version`
+ver=`./torrentnotify -version|grep -Po '(?<=torrentnotify )\d.\d'`
 echo $ver
 
 cd ./distr
@@ -10,9 +10,9 @@ cd ./distr
 rm ./*.deb
 mkdir -p -m 0755 ./deb/DEBIAN
 
-echo "Package: torrentfs
+echo "Package: torrentnotify
 Version: $ver
-Provides: torrentfs
+Provides: torrentnotify
 Section: utils
 Priority: optional
 Architecture: amd64
@@ -22,24 +22,24 @@ Description: $fullver
 " > ./deb/DEBIAN/control
 chmod 0644 ./deb/DEBIAN/control
 
-echo "/etc/systemd/system/torrentfs.service" > ./deb/DEBIAN/conffiles
+echo "/etc/systemd/system/torrentnotify.service" > ./deb/DEBIAN/conffiles
 chmod 0644 ./deb/DEBIAN/conffiles
 
-echo "/var/lib/torrentfs" > ./deb/DEBIAN/dirs
+echo "/var/lib/torrentnotify" > ./deb/DEBIAN/dirs
 chmod 0644 ./deb/DEBIAN/dirs
 
 echo "#!/bin/bash
 
 systemctl daemon-reload
-systemctl enable torrentfs.service
-systemctl start torrentfs
+systemctl enable torrentnotify.service
+systemctl start torrentnotify
 " > ./deb/DEBIAN/postinst
 chmod 0755 ./deb/DEBIAN/postinst
 
 echo "#!/bin/bash
 
-systemctl stop torrentfs
-systemctl disable torrentfs
+systemctl stop torrentnotify
+systemctl disable torrentnotify
 exit 0
 " > ./deb/DEBIAN/prerm
 chmod 0755 ./deb/DEBIAN/prerm
@@ -50,11 +50,11 @@ systemctl daemon-reload
 " > ./deb/DEBIAN/postrm
 chmod 0755 ./deb/DEBIAN/postrm
 
-mkdir -p -m 0755 ./deb/opt/torrentfs
+mkdir -p -m 0755 ./deb/opt/torrentnotify
 mkdir -p -m 0755 ./deb/etc/systemd/system
-mkdir -p -m 0755 ./deb/var/lib/torrentfs
+mkdir -p -m 0755 ./deb/var/lib/torrentnotify
 
-cp ../torrentfs ./deb/opt/torrentfs/
+cp ../torrentnotify ./deb/opt/torrentnotify/
 echo "[Unit]
 Description=$fullver daemon service
 After=network.target local-fs.target network-online.target
@@ -68,20 +68,20 @@ Type=simple
 #User=nouser
 #Group=nogroup
 
-WorkingDirectory=/var/lib/torrentfs/
+WorkingDirectory=/var/lib/torrentnotify/
 Restart=always
-ExecStart=/opt/torrentfs/torrentfs
+ExecStart=/opt/torrentnotify/torrentnotify
 
 [Install]
 WantedBy=multi-user.target
-" > ./deb/etc/systemd/system/torrentfs.service
+" > ./deb/etc/systemd/system/torrentnotify.service
 
-chmod 0755 ./deb/opt/torrentfs/torrentfs
-chmod 0644 ./deb/etc/systemd/system/torrentfs.service
+chmod 0755 ./deb/opt/torrentnotify/torrentnotify
+chmod 0644 ./deb/etc/systemd/system/torrentnotify.service
 
 fakeroot dpkg-deb --build ./deb
 
-mv ./deb.deb "./torrentfs_"$ver"_amd64.deb"
-lintian --no-tag-display-limit "./torrentfs_"$ver"_amd64.deb"
+mv ./deb.deb "./torrentnotify_"$ver"_amd64.deb"
+lintian --no-tag-display-limit "./torrentnotify_"$ver"_amd64.deb"
 
 rm -r ./deb
