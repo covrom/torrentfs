@@ -192,6 +192,8 @@ func addt(client *transmissionrpc.Client, evfn string, wg *sync.WaitGroup, done 
 
 		log.Printf("torrent added: [%d] %s, hash: %s\n", *t.ID, *t.Name, *t.HashString)
 
+		os.Remove(evfn)
+
 		// err = client.TorrentStartNowHashes([]string{*t.HashString})
 		// if err != nil {
 		// 	log.Printf("error starting torrent %s: %s\n", *t.Name, err)
