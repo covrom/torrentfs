@@ -177,6 +177,12 @@ func mainExitCode() int {
 
 func addt(client *transmissionrpc.Client, evfn string, wg *sync.WaitGroup, done chan bool) {
 	defer wg.Done()
+	defer func() {
+		if ex := recover(); ex != nil {
+			log.Println(ex)
+		}
+	}()
+
 	<-time.After(2 * time.Second)
 	if len(evfn) > 0 {
 		log.Printf("adding %s", evfn)
@@ -212,9 +218,10 @@ func addt(client *transmissionrpc.Client, evfn string, wg *sync.WaitGroup, done 
 					return
 				}
 				for _, torrent := range torrents {
+					log.Printf("percent done of %s: %0.1f\n", *t.Name, (*torrent.PercentDone)*100)
 					if *torrent.PercentDone >= 1.0 {
 
-						log.Printf("torrent is complete: %s", *torrent.Name)
+						log.Printf("torrent is complete: %s\n", *t.Name)
 
 						<-time.After(time.Duration(int64(args.AliveMinutes) * int64(time.Minute)))
 
