@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -242,26 +239,26 @@ func addt(client *transmissionrpc.Client, evfn string, wg *sync.WaitGroup, done 
 	}
 }
 
-func file2Base64(filename string) (b64 string, err error) {
-	// Try to open file
-	file, err := os.Open(filename)
-	if err != nil {
-		err = fmt.Errorf("open error: %v", err)
-		return
-	}
-	defer file.Close()
-	// Prepare encoder
-	buffer := new(bytes.Buffer)
-	encoder := base64.NewEncoder(base64.StdEncoding, buffer)
-	defer encoder.Close()
-	// Read file & encode
-	if _, err = io.Copy(encoder, file); err != nil {
-		err = fmt.Errorf("can't copy file content into the base64 encoder: %v", err)
-	}
-	// Read it
-	b64 = buffer.String()
-	return
-}
+// func file2Base64(filename string) (b64 string, err error) {
+// 	// Try to open file
+// 	file, err := os.Open(filename)
+// 	if err != nil {
+// 		err = fmt.Errorf("open error: %v", err)
+// 		return
+// 	}
+// 	defer file.Close()
+// 	// Prepare encoder
+// 	buffer := new(bytes.Buffer)
+// 	encoder := base64.NewEncoder(base64.StdEncoding, buffer)
+// 	defer encoder.Close()
+// 	// Read file & encode
+// 	if _, err = io.Copy(encoder, file); err != nil {
+// 		err = fmt.Errorf("can't copy file content into the base64 encoder: %v", err)
+// 	}
+// 	// Read it
+// 	b64 = buffer.String()
+// 	return
+// }
 
 func torrentAddFile(c *transmissionrpc.Client, filename string) (torrent *transmissionrpc.Torrent, err error) {
 	// Validate
@@ -269,17 +266,17 @@ func torrentAddFile(c *transmissionrpc.Client, filename string) (torrent *transm
 		err = errors.New("filename can't be empty")
 		return
 	}
-	// Get base64 encoded file content
-	b64, err := file2Base64(filename)
-	if err != nil {
-		err = fmt.Errorf("can't encode '%s' content as base64: %v", filename, err)
-		return
-	}
-	// Prepare and send payload
+
+	// b64, err := file2Base64(filename)
+	// if err != nil {
+	// 	err = fmt.Errorf("can't encode '%s' content as base64: %v", filename, err)
+	// 	return
+	// }
 	fls := false
 	dir := filepath.Dir(filename)
 	return c.TorrentAdd(&transmissionrpc.TorrentAddPayload{
-		MetaInfo:    &b64,
+		// MetaInfo:    &b64,
+		Filename:    &filename,
 		Paused:      &fls,
 		DownloadDir: &dir,
 	})
