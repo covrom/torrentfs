@@ -52,7 +52,7 @@ chmod 0755 ./deb/DEBIAN/postrm
 
 mkdir -p -m 0755 ./deb/opt/torrentnotify
 mkdir -p -m 0755 ./deb/etc/systemd/system
-mkdir -p -m 0755 ./deb/var/lib/torrentnotify
+mkdir -p -m 0775 ./deb/var/lib/torrentnotify
 
 cp ../torrentnotify ./deb/opt/torrentnotify/
 echo "[Unit]

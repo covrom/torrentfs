@@ -98,7 +98,7 @@ func mainExitCode() int {
 		advconf.RPCURI = rpcURL.Path
 	}
 	rpcpsw, _ := rpcURL.User.Password()
-	transmissionbt, err := transmissionrpc.New(rpcURL.Hostname(), rpcURL.User.String(), rpcpsw, advconf)
+	transmissionbt, err := transmissionrpc.New(rpcURL.Hostname(), rpcURL.User.Username(), rpcpsw, advconf)
 	if err != nil {
 		log.Println(err)
 		return 1
