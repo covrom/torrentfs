@@ -33,14 +33,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6ac4eb8697d01fb8e9b613d63e5a182bf0099d6be60397fe0cd1e9bf515908ee"
+  digest = "1:a0d0eb61e95e6d37be245a6c1b15ecda27e276a4930452a6aacb92c4914b784b"
   name = "github.com/anacrolix/torrent"
   packages = [
     "bencode",
     "metainfo",
     "mmap_span",
     "storage",
-    "util/dirwatch",
   ]
   pruneopts = "UT"
   revision = "148bb977bc384a9d9a1355cc9b49eab7d675e9b4"
@@ -142,8 +141,8 @@
     "github.com/anacrolix/tagflag",
     "github.com/anacrolix/torrent/metainfo",
     "github.com/anacrolix/torrent/storage",
-    "github.com/anacrolix/torrent/util/dirwatch",
     "github.com/boltdb/bolt",
+    "github.com/fsnotify/fsnotify",
     "github.com/hekmon/transmissionrpc",
   ]
   solver-name = "gps-cdcl"
