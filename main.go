@@ -187,6 +187,8 @@ func addt(client *transmissionrpc.Client, evfn string, wg *sync.WaitGroup, done 
 	if len(evfn) > 0 {
 		log.Printf("adding %s", evfn)
 
+		// TODO: dont add if exists
+		
 		t, err := torrentAddFile(client, evfn)
 		if err != nil {
 			log.Printf("error adding torrent %s to transmission-daemon: %s\n", evfn, err)
