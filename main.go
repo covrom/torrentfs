@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -23,7 +24,7 @@ import (
 	"github.com/hekmon/transmissionrpc"
 )
 
-const AppVersion = "torrentnotify 1.0"
+const AppVersion = "torrentnotify 1.1"
 
 var (
 	args = struct {
@@ -175,6 +176,13 @@ func mainExitCode() int {
 	return 1
 }
 
+type currTorr struct {
+	sync.Mutex
+	torrs map[string]string
+}
+
+var currentTorrents = currTorr{torrs: make(map[string]string)}
+
 func addt(client *transmissionrpc.Client, evfn string, wg *sync.WaitGroup, done chan bool) {
 	defer wg.Done()
 	defer func() {
@@ -188,7 +196,7 @@ func addt(client *transmissionrpc.Client, evfn string, wg *sync.WaitGroup, done 
 		log.Printf("adding %s", evfn)
 
 		// TODO: dont add if exists
-		
+
 		t, err := torrentAddFile(client, evfn)
 		if err != nil {
 			log.Printf("error adding torrent %s to transmission-daemon: %s\n", evfn, err)
@@ -220,10 +228,23 @@ func addt(client *transmissionrpc.Client, evfn string, wg *sync.WaitGroup, done 
 					return
 				}
 				for _, torrent := range torrents {
-					log.Printf("percent done of %s: %0.1f\n", *t.Name, (*torrent.PercentDone)*100)
+
+					currentTorrents.Lock()
+					lstr := fmt.Sprintf("percent done of %s: %0.1f\n", *t.Name, (*torrent.PercentDone)*100)
+					if currentTorrents.torrs[*t.Name] != lstr {
+						log.Println(lstr)
+						currentTorrents.torrs[*t.Name] = lstr
+					}
+					currentTorrents.Unlock()
+
 					if *torrent.PercentDone >= 1.0 {
 
 						log.Printf("torrent is complete: %s\n", *t.Name)
+						currentTorrents.Lock()
+						if _, ok := currentTorrents.torrs[*t.Name]; ok {
+							delete(currentTorrents.torrs, *t.Name)
+						}
+						currentTorrents.Unlock()
 
 						<-time.After(time.Duration(int64(args.AliveMinutes) * int64(time.Minute)))
 
